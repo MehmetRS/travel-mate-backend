@@ -3,6 +3,7 @@ import { AuthModule } from './auth/auth.module';
 import { TripsModule } from './trips/trips.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { HealthModule } from './health/health.module';
+import { ChatsModule } from './chats/chats.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
@@ -16,6 +17,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     PrismaModule,
     AuthModule,
     TripsModule,
+    ChatsModule,
     HealthModule,
   ],
 })

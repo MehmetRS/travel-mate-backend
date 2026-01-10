@@ -1,5 +1,5 @@
 import { Expose, Type } from 'class-transformer';
-import { IsString, IsNumber, IsDateString, IsOptional, Min, IsUUID, MinDate } from 'class-validator';
+import { IsString, IsNumber, IsDate, IsOptional, Min, IsUUID, MinDate } from 'class-validator';
 
 // Request DTOs
 export class CreateTripDto {
@@ -9,11 +9,12 @@ export class CreateTripDto {
   @IsString()
   destination: string;
 
-  @IsDateString()
+  @Type(() => Date)
+  @IsDate()
   @MinDate(new Date(), {
     message: 'Departure date must be in the future'
   })
-  departureDateTime: string;
+  departureDateTime: Date;
 
   @IsNumber()
   @Min(0)

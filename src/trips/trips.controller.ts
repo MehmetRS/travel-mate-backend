@@ -30,6 +30,12 @@ export class TripsController {
     @Body() createTripDto: CreateTripDto,
     @Req() req: AuthenticatedRequest
   ): Promise<TripResponseDto> {
+    // TODO: Remove debug logs after verification
+    console.log('DEBUG: createTripDto.departureDateTime raw:', createTripDto.departureDateTime);
+    console.log('DEBUG: createTripDto.departureDateTime type:', typeof createTripDto.departureDateTime);
+    console.log('DEBUG: createTripDto.departureDateTime instanceof Date:', createTripDto.departureDateTime instanceof Date);
+    console.log('DEBUG: createTripDto.departureDateTime is future:', createTripDto.departureDateTime > new Date());
+
     return this.tripsService.create(req.user.sub, createTripDto);
   }
 }

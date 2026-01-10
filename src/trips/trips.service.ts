@@ -80,7 +80,7 @@ export class TripsService {
       data: {
         from: dto.origin,
         to: dto.destination,
-        date: new Date(dto.departureDateTime).toISOString(),
+        date: dto.departureDateTime.toISOString(),
         price: dto.price,
         userId: userId,
       }

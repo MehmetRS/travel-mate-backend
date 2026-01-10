@@ -1,19 +1,105 @@
-import { IsString, IsNotEmpty, IsNumber, IsDateString } from 'class-validator';
+import { Expose, Type } from 'class-transformer';
+import { IsString, IsNumber, IsDateString, IsOptional, Min, IsUUID, MinDate } from 'class-validator';
 
+// Request DTOs
 export class CreateTripDto {
   @IsString()
-  @IsNotEmpty()
-  from: string;
+  origin: string;
 
   @IsString()
-  @IsNotEmpty()
-  to: string;
+  destination: string;
 
   @IsDateString()
-  @IsNotEmpty()
-  date: string;
+  @MinDate(new Date(), {
+    message: 'Departure date must be in the future'
+  })
+  departureDateTime: string;
 
   @IsNumber()
-  @IsNotEmpty()
+  @Min(0)
   price: number;
+
+  @IsNumber()
+  @Min(1)
+  availableSeats: number;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsUUID()
+  @IsOptional()
+  vehicleId?: string;
+}
+
+// Response DTOs
+
+export class VehicleDto {
+  @Expose()
+  vehicleType: string;
+
+  @Expose()
+  brand: string;
+
+  @Expose()
+  model: string;
+
+  @Expose()
+  seats: number;
+}
+
+export class DriverDto {
+  @Expose()
+  id: string;
+
+  @Expose()
+  name: string;
+
+  @Expose()
+  rating: number;
+
+  @Expose()
+  isVerified: boolean;
+
+  @Expose()
+  @Type(() => VehicleDto)
+  vehicle: VehicleDto;
+}
+
+export class TripResponseDto {
+  @Expose()
+  id: string;
+
+  @Expose()
+  origin: string;
+
+  @Expose()
+  destination: string;
+
+  @Expose()
+  departureDateTime: Date;
+
+  @Expose()
+  price: number;
+
+  @Expose()
+  totalSeats: number;
+
+  @Expose()
+  availableSeats: number;
+
+  @Expose()
+  isFull: boolean;
+
+  @Expose()
+  description?: string;
+
+  @Expose()
+  @Type(() => DriverDto)
+  driver: DriverDto;
+}
+
+export class TripDetailResponseDto extends TripResponseDto {
+  @Expose()
+  createdAt: Date;
 }

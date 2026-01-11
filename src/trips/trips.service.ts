@@ -1,7 +1,14 @@
 import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { TripResponseDto, TripDetailResponseDto, CreateTripDto } from '../dtos/trip.dto';
+import { TripResponseDto, TripDetailResponseDto, CreateTripDto, VehicleDto } from '../dtos/trip.dto';
 import { plainToInstance } from 'class-transformer';
+import { Prisma, Trip, User, Vehicle } from '@prisma/client';
+
+type TripWithRelations = Trip & {
+  user: User & {
+    vehicle: Vehicle | null;
+  };
+};
 
 // Response types for consistent mapping
 interface TripResponse {
@@ -13,18 +20,13 @@ interface TripResponse {
   totalSeats: number;
   availableSeats: number;
   isFull: boolean;
-  description: string | null;
+  description?: string;
   driver: {
     id: string;
     name: string;
     rating: number;
     isVerified: boolean;
-    vehicle: {
-      vehicleType: string;
-      brand: string;
-      model: string;
-      seats: number;
-    } | null;
+    vehicle: VehicleDto | null;
   };
 }
 
@@ -38,43 +40,33 @@ export class TripsService {
 
   async findAll(): Promise<TripResponseDto[]> {
     const trips = await this.prisma.trip.findMany({
-      orderBy: [
-        { date: 'asc' }
-      ],
       include: {
-        user: true, /*Faz-19’da geri gelecek
-        {
+        user: {
           include: {
             vehicle: true
           }
-        }*/
-      }
-    });
-
-    // Map to strongly typed response
-    // TEMPORARY: Prisma client not regenerated.
-    // This will be removed in Phase 19 after schema migration.
-    const responses: TripResponse[] = trips.map(trip => {
-      const typedTrip = trip as any;
-      return {
-        id: trip.id,
-        origin: trip.from,
-        destination: trip.to,
-        departureDateTime: new Date(trip.date),
-        price: trip.price,
-        totalSeats: typedTrip.totalSeats || 4,
-        availableSeats: typedTrip.availableSeats || 2,
-        isFull: typedTrip.isFull || false,
-        description: typedTrip.description || null,
-        driver: {
-          id: 'temp-driver-id', // Temporary until user relations are available
-          name: 'Driver Name',
-          rating: 4.5,
-          isVerified: false,
-          vehicle: null // Temporary until vehicle relations are available
         }
-      };
-    });
+      }
+    }) as unknown as TripWithRelations[];
+
+    const responses: TripResponse[] = trips.map(trip => ({
+      id: trip.id,
+      origin: trip.from,
+      destination: trip.to,
+      departureDateTime: trip.date,
+      price: trip.price,
+      totalSeats: trip.totalSeats,
+      availableSeats: trip.availableSeats,
+      isFull: trip.isFull,
+      description: trip.description ?? undefined,
+      driver: {
+        id: trip.user.id,
+        name: trip.user.name || 'Unknown',
+        rating: trip.user.rating,
+        isVerified: trip.user.isVerified,
+        vehicle: trip.user.vehicle ? plainToInstance(VehicleDto, trip.user.vehicle) : null
+      }
+    }));
 
     // Transform to DTO
     return responses.map(response =>
@@ -83,54 +75,44 @@ export class TripsService {
   }
 
   async create(userId: string, dto: CreateTripDto): Promise<TripResponseDto> {
-    // TEMPORARY: Prisma client not regenerated.
-    // This will be removed in Phase 19 after schema migration.
     const trip = await this.prisma.trip.create({
       data: {
         from: dto.origin,
         to: dto.destination,
-        date: dto.departureDateTime.toISOString(),
+        date: dto.departureDateTime,
         price: dto.price,
         totalSeats: dto.availableSeats,
         availableSeats: dto.availableSeats,
         isFull: false,
-        description: dto.description,
-        userId: userId,
-      } as any,
+        description: dto.description || null,
+        userId,
+      },
       include: {
-        user: true, /*Faz-19’da geri gelecek{
+        user: {
           include: {
             vehicle: true
           }
-        }*/
+        }
       }
-    } as any);
+    }) as unknown as TripWithRelations;
 
-    // TEMPORARY: Prisma client not regenerated.
-    // This will be removed in Phase 19 after schema migration.
-    const typedTrip = trip as any;
     return {
       id: trip.id,
       origin: trip.from,
       destination: trip.to,
-      departureDateTime: new Date(trip.date),
+      departureDateTime: trip.date,
       price: trip.price,
-      totalSeats: typedTrip.totalSeats || dto.availableSeats,
-      availableSeats: typedTrip.availableSeats || dto.availableSeats,
-      isFull: typedTrip.isFull || false,
-      description: typedTrip.description || dto.description,
+      totalSeats: trip.totalSeats,
+      availableSeats: trip.availableSeats,
+      isFull: trip.isFull,
+      description: trip.description ?? undefined,
       driver: {
-        id: userId,
-        name: 'Driver Name',
-        rating: 4.5,
-        isVerified: false,
-        vehicle: {
-          vehicleType: '',
-          brand: '',
-          model: '',
-          seats: 0,
-        },
-      },
+        id: trip.user.id,
+        name: trip.user.name || 'Unknown',
+        rating: trip.user.rating,
+        isVerified: trip.user.isVerified,
+        vehicle: trip.user.vehicle ? plainToInstance(VehicleDto, trip.user.vehicle) : null
+      }
     };
   }
 
@@ -138,38 +120,35 @@ export class TripsService {
     const trip = await this.prisma.trip.findUnique({
       where: { id },
       include: {
-        user: true, /*Faz-19’da geri gelecek
+        user: {
           include: {
             vehicle: true
           }
-        }*/
+        }
       }
-    } as any);
+    }) as unknown as TripWithRelations;
 
     if (!trip) {
       throw new NotFoundException('Trip not found');
     }
 
-    // TEMPORARY: Prisma client not regenerated.
-    // This will be removed in Phase 19 after schema migration.
-    const typedTrip = trip as any;
     const response: TripDetailResponse = {
       id: trip.id,
       origin: trip.from,
       destination: trip.to,
-      departureDateTime: new Date(trip.date),
+      departureDateTime: trip.date,
       price: trip.price,
-      totalSeats: typedTrip.totalSeats || 4,
-      availableSeats: typedTrip.availableSeats || 2,
-      isFull: typedTrip.isFull || false,
-      description: typedTrip.description || null,
+      totalSeats: trip.totalSeats,
+      availableSeats: trip.availableSeats,
+      isFull: trip.isFull,
+      description: trip.description ?? undefined,
       createdAt: trip.createdAt,
       driver: {
-        id: 'temp-driver-id', // Temporary until user relations are available
-        name: 'Driver Name',
-        rating: 4.5,
-        isVerified: false,
-        vehicle: null // Temporary until vehicle relations are available
+        id: trip.user.id,
+        name: trip.user.name || 'Unknown',
+        rating: trip.user.rating,
+        isVerified: trip.user.isVerified,
+        vehicle: trip.user.vehicle ? plainToInstance(VehicleDto, trip.user.vehicle) : null
       }
     };
 
@@ -179,18 +158,16 @@ export class TripsService {
 
   async bookTrip(tripId: string, userId: string, seats: number): Promise<TripResponseDto> {
     // Find trip and check if it exists
-    // TEMPORARY: Prisma client not regenerated.
-    // This will be removed in Phase 19 after schema migration.
     const trip = await this.prisma.trip.findUnique({
       where: { id: tripId },
       include: {
-        user: true, /*Faz-19’da geri gelecek{
+        user: {
           include: {
             vehicle: true
           }
-        }*/
+        }
       }
-    });
+    }) as unknown as TripWithRelations;
 
     if (!trip) {
       throw new NotFoundException('Trip not found');
@@ -201,59 +178,49 @@ export class TripsService {
       throw new ForbiddenException('Cannot book your own trip');
     }
 
-    // TEMPORARY: Prisma client not regenerated.
-    // This will be removed in Phase 19 after schema migration.
-    const typedTrip = trip as any;
-
     // Check if trip is full
-    if (typedTrip.isFull) {
+    if (trip.isFull) {
       throw new ConflictException('Trip is already full');
     }
 
     // Check if enough seats are available
-    if (seats > typedTrip.availableSeats) {
+    if (seats > trip.availableSeats) {
       throw new ConflictException('Not enough seats available');
     }
 
     // Update trip with new seat count
-    const newAvailableSeats = typedTrip.availableSeats - seats;
-    // TEMPORARY: Prisma client not regenerated.
-    // This will be removed in Phase 19 after schema migration.
+    const newAvailableSeats = trip.availableSeats - seats;
     const updatedTrip = await this.prisma.trip.update({
       where: { id: tripId },
       data: {
         availableSeats: newAvailableSeats,
         isFull: newAvailableSeats === 0
-      } as any,
+      },
       include: {
-        user: true, /*Faz-19’da geri gelecek{
+        user: {
           include: {
             vehicle: true
           }
-        }*/
+        }
       }
-    } as any);
+    }) as unknown as TripWithRelations;
 
-    // TEMPORARY: Prisma client not regenerated.
-    // This will be removed in Phase 19 after schema migration.
-    const typedUpdatedTrip = updatedTrip as any;
-    const typedUser = (updatedTrip as any).user as any;
     const response: TripResponse = {
       id: updatedTrip.id,
       origin: updatedTrip.from,
       destination: updatedTrip.to,
-      departureDateTime: new Date(updatedTrip.date),
+      departureDateTime: updatedTrip.date,
       price: updatedTrip.price,
-      totalSeats: typedUpdatedTrip.totalSeats || 4,
-      availableSeats: typedUpdatedTrip.availableSeats || 2,
-      isFull: typedUpdatedTrip.isFull || false,
-      description: typedUpdatedTrip.description || null,
+      totalSeats: updatedTrip.totalSeats,
+      availableSeats: updatedTrip.availableSeats,
+      isFull: updatedTrip.isFull,
+      description: updatedTrip.description ?? undefined,
       driver: {
-        id: typedUser.id,
-        name: typedUser.name || 'Unknown',
-        rating: typedUser.rating,
-        isVerified: typedUser.isVerified,
-        vehicle: typedUser.vehicle
+        id: updatedTrip.user.id,
+        name: updatedTrip.user.name || 'Unknown',
+        rating: updatedTrip.user.rating,
+        isVerified: updatedTrip.user.isVerified,
+        vehicle: updatedTrip.user.vehicle ? plainToInstance(VehicleDto, updatedTrip.user.vehicle) : null
       }
     };
 

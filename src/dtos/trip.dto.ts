@@ -64,7 +64,7 @@ export class DriverDto {
 
   @Expose()
   @Type(() => VehicleDto)
-  vehicle: VehicleDto;
+  vehicle: VehicleDto | null;
 }
 
 export class TripResponseDto {

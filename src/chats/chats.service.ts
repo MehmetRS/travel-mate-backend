@@ -2,26 +2,8 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { PrismaService } from '../prisma/prisma.service';
 import { ChatResponseDto } from '../dtos/chat.dto';
 
-// Note: This is a temporary in-memory store until DB migration
-// Will be replaced with proper Prisma models in the future
-interface Message {
-  id: string;
-  content: string;
-  senderId: string;
-  createdAt: Date;
-}
-
-interface Chat {
-  id: string;
-  tripId: string;
-  messages: Message[];
-}
-
 @Injectable()
 export class ChatsService {
-  // Temporary in-memory storage
-  private chats: Map<string, Chat> = new Map();
-
   constructor(private readonly prisma: PrismaService) {}
 
   async getChatByTripId(tripId: string, userId: string): Promise<ChatResponseDto> {
@@ -41,22 +23,24 @@ export class ChatsService {
       throw new ForbiddenException('You are not a participant in this trip');
     }
 
-    // Check if chat exists in our temporary store
-    const chat = this.chats.get(tripId);
+    // Find chat in database
+    const chat = await this.prisma.chat.findUnique({
+      where: { tripId },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'asc' }
+        }
+      }
+    });
+
     if (!chat) {
       return { exists: false };
     }
 
-    // Return chat data
     return {
       exists: true,
       chatId: chat.id,
-      messages: chat.messages.map(msg => ({
-        id: msg.id,
-        content: msg.content,
-        senderId: msg.senderId,
-        createdAt: msg.createdAt,
-      })),
+      messages: chat.messages,
     };
   }
 
@@ -76,38 +60,46 @@ export class ChatsService {
       throw new ForbiddenException('You are not authorized to send messages for this trip');
     }
 
-    // Get or create chat for this trip
-    let chat = this.chats.get(tripId);
+    // Get or create chat
+    let chat = await this.prisma.chat.findUnique({
+      where: { tripId }
+    });
+
     if (!chat) {
-      // Create new chat
-      chat = {
-        id: `chat-${tripId}`, // Temporary ID generation
-        tripId: tripId,
-        messages: [],
-      };
-      this.chats.set(tripId, chat);
+      chat = await this.prisma.chat.create({
+        data: {
+          tripId
+        }
+      });
     }
 
-    // Add new message
-    const newMessage: Message = {
-      id: `msg-${Date.now()}`, // Temporary ID generation
-      content: content,
-      senderId: userId,
-      createdAt: new Date(),
-    };
+    // Create new message
+    await this.prisma.message.create({
+      data: {
+        chatId: chat.id,
+        content,
+        senderId: userId
+      }
+    });
 
-    chat.messages.push(newMessage);
+    // Return updated chat with messages
+    const updatedChat = await this.prisma.chat.findUnique({
+      where: { id: chat.id },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'asc' }
+        }
+      }
+    });
 
-    // Return updated chat
+    if (!updatedChat) {
+      throw new Error('Failed to retrieve updated chat');
+    }
+
     return {
       exists: true,
-      chatId: chat.id,
-      messages: chat.messages.map(msg => ({
-        id: msg.id,
-        content: msg.content,
-        senderId: msg.senderId,
-        createdAt: msg.createdAt,
-      })),
+      chatId: updatedChat.id,
+      messages: updatedChat.messages
     };
   }
 }

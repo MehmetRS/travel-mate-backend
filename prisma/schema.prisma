@@ -7,21 +7,64 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  name      String?
-  password  String
-  createdAt DateTime  @default(now())
-  trips     Trip[]
+  id          String    @id @default(cuid())
+  email       String    @unique
+  name        String?
+  password    String
+  rating      Float     @default(4.5) // Mock rating for demo
+  isVerified  Boolean   @default(false)
+  vehicle     Vehicle?
+  trips       Trip[]
+  messages    Message[]
+  createdAt   DateTime  @default(now())
+}
+
+model Vehicle {
+  id          String    @id @default(cuid())
+  vehicleType String
+  brand       String
+  model       String
+  seats       Int
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id])
 }
 
 model Trip {
+  id               String    @id @default(cuid())
+  from            String    // Keep existing field name
+  to              String    // Keep existing field name
+  date            DateTime  // Keep existing field name
+  price           Float
+  totalSeats      Int      @default(0)
+  availableSeats  Int      @default(0)
+  description     String?
+  isFull          Boolean   @default(false)
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  createdAt       DateTime  @default(now())
+  chat            Chat?
+
+  @@index([userId])
+}
+
+model Chat {
   id        String    @id @default(cuid())
-  from      String
-  to        String
-  date      String
-  price     Float
-  userId    String
-  user      User      @relation(fields: [userId], references: [id])
+  tripId    String    @unique
   createdAt DateTime  @default(now())
+
+  trip      Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  messages  Message[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  chatId    String
+  senderId  String
+  content   String
+  createdAt DateTime @default(now())
+
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender    User     @relation(fields: [senderId], references: [id])
+
+  @@index([chatId])
 }

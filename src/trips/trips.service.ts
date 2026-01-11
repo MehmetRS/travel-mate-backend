@@ -42,11 +42,12 @@ export class TripsService {
         { date: 'asc' }
       ],
       include: {
-        user: {
+        user: true, /*Faz-19’da geri gelecek
+        {
           include: {
             vehicle: true
           }
-        }
+        }*/
       }
     });
 
@@ -97,11 +98,11 @@ export class TripsService {
         userId: userId,
       } as any,
       include: {
-        user: {
+        user: true, /*Faz-19’da geri gelecek{
           include: {
             vehicle: true
           }
-        }
+        }*/
       }
     } as any);
 
@@ -137,11 +138,11 @@ export class TripsService {
     const trip = await this.prisma.trip.findUnique({
       where: { id },
       include: {
-        user: {
+        user: true, /*Faz-19’da geri gelecek
           include: {
             vehicle: true
           }
-        }
+        }*/
       }
     } as any);
 
@@ -183,11 +184,11 @@ export class TripsService {
     const trip = await this.prisma.trip.findUnique({
       where: { id: tripId },
       include: {
-        user: {
+        user: true, /*Faz-19’da geri gelecek{
           include: {
             vehicle: true
           }
-        }
+        }*/
       }
     });
 
@@ -225,11 +226,11 @@ export class TripsService {
         isFull: newAvailableSeats === 0
       } as any,
       include: {
-        user: {
+        user: true, /*Faz-19’da geri gelecek{
           include: {
             vehicle: true
           }
-        }
+        }*/
       }
     } as any);
 

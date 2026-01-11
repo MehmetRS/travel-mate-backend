@@ -34,23 +34,26 @@ async function bootstrap() {
   app.useGlobalInterceptors(new LoggingInterceptor());
 
   // Enable CORS for frontend
-  const allowedOrigins = process.env.FRONTEND_URL
-    ? process.env.FRONTEND_URL.split(',').map(o => o.trim())
-    : ['http://localhost:19006'];
+  const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+    : ['http://localhost:3000'];
 
   app.enableCors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like server-to-server or health checks)
+      // Allow requests with no origin (like mobile apps, server-to-server, or curl)
       if (!origin) {
+        logger.debug('Allowing request with no origin');
         return callback(null, true);
       }
 
       // Allow if origin is in whitelist
       if (allowedOrigins.includes(origin)) {
-        return callback(null, origin);
+        logger.debug(`Allowing request from whitelisted origin: ${origin}`);
+        return callback(null, true);
       }
 
       // Block other origins
+      logger.warn(`Blocked request from unauthorized origin: ${origin}`);
       callback(new Error(`CORS blocked for origin: ${origin}`), false);
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

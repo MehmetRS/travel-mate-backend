@@ -6,7 +6,7 @@ const requiredEnvVars = [
   'DATABASE_URL',
   'JWT_SECRET',
   'PORT',
-  'FRONTEND_URL',
+  'ALLOWED_ORIGINS',
 ] as const;
 
 export function validateEnv(): void {

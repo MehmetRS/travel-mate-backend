@@ -1,9 +1,10 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Request } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginRequestDto, RegisterRequestDto } from '../dtos/auth.dto';
-import type { LoginResponse } from './auth.types';
+import type { LoginResponse, JwtPayload } from './auth.types';
 import { Public } from './public.decorator';
+import { JwtAuthGuard } from './jwt.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -21,5 +22,11 @@ export class AuthController {
   @Public()
   async register(@Body() data: RegisterRequestDto): Promise<LoginResponse> {
     return this.authService.register(data);
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  async me(@Request() req): Promise<JwtPayload> {
+    return req.user;
   }
 }

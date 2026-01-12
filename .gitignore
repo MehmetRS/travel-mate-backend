@@ -36,4 +36,4 @@ Thumbs.db
 /coverage
 
 # Prisma
-/prisma/migrations/
+#/prisma/migrations/

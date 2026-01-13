@@ -8,21 +8,8 @@ export class HealthController {
   private isDbConnected = false;
 
   constructor(private readonly prisma: PrismaService) {
-    // Monitor database connection status
-    this.monitorDatabaseConnection();
-  }
-
-  private monitorDatabaseConnection() {
-    // Initial connection check
-    this.prisma.$connect()
-      .then(() => {
-        this.isDbConnected = true;
-        this.logger.log('Database connection established');
-      })
-      .catch(error => {
-        this.isDbConnected = false;
-        this.logger.error('Database connection failed', error);
-      });
+    // No blocking connection - let Prisma handle connection lazily
+    this.logger.log('Health controller initialized');
   }
 
   @Public()

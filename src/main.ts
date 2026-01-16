@@ -74,6 +74,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
   logger.log(`Server running on port ${port}`);
+  console.log('Auth routes registered: GET /me');
 
   // Handle graceful shutdown
   const signals = ['SIGTERM', 'SIGINT'];

@@ -6,7 +6,7 @@ import type { LoginResponse, JwtPayload } from './auth.types';
 import { Public } from './public.decorator';
 import { JwtAuthGuard } from './jwt.guard';
 
-@Controller('auth')
+@Controller()
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
@@ -24,9 +24,9 @@ export class AuthController {
     return this.authService.register(data);
   }
 
-  @Get('me')
   @UseGuards(JwtAuthGuard)
-  async me(@Request() req): Promise<JwtPayload> {
+  @Get('me')
+  getMe(@Request() req) {
     return req.user;
   }
 }

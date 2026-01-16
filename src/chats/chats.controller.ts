@@ -26,6 +26,6 @@ export class ChatsController {
     @Req() req: AuthenticatedRequest,
     @Body() createMessageDto: CreateMessageDto,
   ): Promise<ChatResponseDto> {
-    return this.chatsService.createMessage(tripId, req.user.sub, createMessageDto.content);
+    return this.chatsService.createMessage(tripId, req.user.sub, createMessageDto);
   }
 }

@@ -1,98 +1,341 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Travel Mate Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A robust, scalable NestJS backend for the Travel Mate carpooling platform with backward-compatible architecture and safe database migrations.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 🚀 Quick Start
 
-## Description
+### Prerequisites
+- Node.js 18+
+- PostgreSQL 14+
+- npm or yarn
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
+### Local Development
 
 ```bash
-$ npm install
+# Install dependencies
+npm install
+
+# Setup local database (see docs/LOCAL_DEVELOPMENT.md)
+# Then run migrations
+npx prisma generate
+npx prisma migrate dev
+
+# Start development server
+npm run start:dev
 ```
 
-## Compile and run the project
+Server runs at `http://localhost:3000`
+
+## 📚 Documentation
+
+- **[API Contract](docs/API_CONTRACT.md)** - Complete API endpoint documentation with request/response schemas
+- **[Migration Policy](docs/MIGRATION_POLICY.md)** - Database migration rules for zero-downtime deployments
+- **[Local Development](docs/LOCAL_DEVELOPMENT.md)** - Complete local setup and development workflow
+- **[Railway Deployment](docs/RAILWAY_DEPLOYMENT.md)** - Production deployment guide for Railway
+
+## 🏗️ Architecture
+
+### Core Principles
+
+1. **Backward Compatibility First** - Never break existing clients
+2. **Safe Migrations Only** - Additive database changes only (no drops, renames, type changes)
+3. **Domain Separation** - Clear boundaries between auth, trips, requests, chats, payments
+4. **Public Reads, Auth Writes** - Trip listings are public, actions require authentication
+5. **Explicit State Machines** - Request status transitions are atomic and predictable
+
+### Technology Stack
+
+- **Framework**: NestJS
+- **Database**: PostgreSQL + Prisma ORM
+- **Authentication**: JWT
+- **Validation**: class-validator
+- **Rate Limiting**: @nestjs/throttler
+
+## 🎯 Key Features
+
+### Trip Requests System (New)
+- **Booking Requests**: Users request seats, driver accepts/rejects
+- **Chat Requests**: Users request to join trip chat
+- **Atomic Seat Management**: Seat decrements happen in transactions
+- **Auto-Chat Creation**: Accepted requests automatically create/join chats
+- **State Machine**: PENDING → ACCEPTED/REJECTED/CANCELLED
+
+### Chat System
+- **Membership-Based**: Explicit chat members table
+- **Message Types**: TEXT, IMAGE, LOCATION with metadata support
+- **Access Control**: Only members can read/send messages
+- **Trip-Scoped**: One chat per trip
+
+### Payment System (MVP)
+- **Payment Tracking**: Link payments to trips and requests
+- **Status Flow**: NOT_STARTED → STARTED → PAID/FAILED/REFUNDED
+- **Extensible**: Ready for payment provider integration
+- **Access Control**: Only payer and trip owner can view
+
+## 📂 Project Structure
+
+```
+src/
+├── auth/           # Authentication & JWT
+├── trips/          # Trip management (public read, auth write)
+├── requests/       # Trip request system (NEW)
+├── chats/          # Chat & messaging with membership
+├── payments/       # Payment tracking (MVP)
+├── health/         # Health check endpoint
+├── prisma/         # Database service
+├── dtos/           # Data Transfer Objects
+├── filters/        # Exception filters
+├── interceptors/   # Logging interceptors
+└── middleware/     # Request ID middleware
+
+prisma/
+├── schema.prisma   # Database schema
+├── migrations/     # Migration history
+└── seed.ts         # Seed data
+
+docs/
+├── API_CONTRACT.md           # API documentation
+├── MIGRATION_POLICY.md       # DB migration rules
+├── LOCAL_DEVELOPMENT.md      # Dev setup guide
+└── RAILWAY_DEPLOYMENT.md     # Production deployment
+```
+
+## 🔐 Authentication
+
+All authenticated endpoints require a Bearer token:
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+Authorization: Bearer <your-jwt-token>
 ```
 
-## Run tests
+Get token via:
+- `POST /auth/register` - Create new account
+- `POST /auth/login` - Login existing account
+- `GET /auth/me` - Verify current session
+
+## 🛣️ API Endpoints
+
+### Public Endpoints (No Auth)
+- `GET /trips` - List all trips
+- `GET /trips/:id` - Get trip details
+- `POST /auth/register` - Register
+- `POST /auth/login` - Login
+- `GET /health` - Health check
+
+### Protected Endpoints (Auth Required)
+- `POST /trips` - Create trip
+- `POST /trips/:tripId/requests` - Create booking/chat request
+- `GET /trips/:tripId/requests` - List requests (trip owner only)
+- `PATCH /requests/:requestId` - Accept/reject/cancel request
+- `GET /trips/:tripId/chat` - Get chat (members only)
+- `POST /trips/:tripId/chat/messages` - Send message (members only)
+- `POST /trips/:tripId/payments` - Create payment
+- `GET /payments/:paymentId` - Get payment details
+
+See [API_CONTRACT.md](docs/API_CONTRACT.md) for complete documentation.
+
+## 🗄️ Database Schema
+
+Key models:
+- **User** - Users with authentication
+- **Vehicle** - User vehicles
+- **Trip** - Trip listings with seats tracking
+- **TripRequest** - Booking/chat requests with state machine
+- **Chat** - Trip chats
+- **ChatMember** - Explicit chat membership
+- **Message** - Chat messages with types (TEXT/IMAGE/LOCATION)
+- **Payment** - Payment tracking
+
+## 🧪 Testing
 
 ```bash
-# unit tests
-$ npm run test
+# Unit tests
+npm run test
 
-# e2e tests
-$ npm run test:e2e
+# E2E tests
+npm run test:e2e
 
-# test coverage
-$ npm run test:cov
+# Test coverage
+npm run test:cov
+
+# Watch mode
+npm run test:watch
 ```
 
-## Deployment
+## 🔨 Development Workflow
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### Making Schema Changes
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+1. **Edit `prisma/schema.prisma`** (follow MIGRATION_POLICY.md)
+2. **Create migration**: `npx prisma migrate dev --name your_change`
+3. **Review SQL**: Check `prisma/migrations/`
+4. **Test**: `npm run test:e2e`
+5. **Commit**: Include migration files in commit
+
+### Code Quality
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm run lint          # Lint code
+npm run format        # Format code
+npm run build         # Type check
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## 🚢 Deployment
 
-## Resources
+### Railway (Production)
 
-Check out a few resources that may come in handy when working with NestJS:
+```bash
+# 1. Ensure migrations are tested locally
+npm run test:e2e
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# 2. Commit and push
+git push origin main
 
-## Support
+# 3. Railway auto-deploys with:
+#    - npm run prisma:migrate:deploy
+#    - npm run build
+#    - npm run start:prod
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+See [RAILWAY_DEPLOYMENT.md](docs/RAILWAY_DEPLOYMENT.md) for complete guide.
 
-## Stay in touch
+## 🔒 Security
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- JWT authentication with secure secrets
+- Rate limiting (ThrottlerModule)
+- CORS configured for specific origins
+- Input validation on all endpoints
+- SQL injection prevention (Prisma)
+- Password hashing (bcrypt)
+- Structured logging without sensitive data
 
-## License
+## 📊 Monitoring
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- Health endpoint: `GET /health`
+- Structured logging with correlation IDs
+- Request/response logging interceptor
+- Error tracking with exception filters
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**"Can't reach database"**
+```bash
+# Check DATABASE_URL in .env
+# Ensure PostgreSQL is running
+docker ps  # if using Docker
+```
+
+**TypeScript errors after schema changes**
+```bash
+npx prisma generate
+npm run build
+```
+
+**Migration conflicts**
+```bash
+npx prisma migrate status
+# Follow MIGRATION_POLICY.md for safe practices
+```
+
+## 📝 Environment Variables
+
+Required variables:
+
+```env
+DATABASE_URL="postgresql://user:pass@host:5432/db"
+JWT_SECRET="your-secret-key"
+PORT=3000
+ALLOWED_ORIGINS="http://localhost:3000"
+```
+
+See `.env.example` for complete list.
+
+## 🤝 Contributing
+
+1. Create feature branch: `git checkout -b feature/amazing-feature`
+2. Follow MIGRATION_POLICY.md for schema changes
+3. Write tests for new features
+4. Update API_CONTRACT.md if adding endpoints
+5. Run tests: `npm run test && npm run test:e2e`
+6. Commit: `git commit -m 'feat: add amazing feature'`
+7. Push: `git push origin feature/amazing-feature`
+8. Open Pull Request
+
+## 📋 Migration Policy Summary
+
+✅ **ALLOWED:**
+- Add new tables
+- Add nullable columns
+- Add columns with defaults
+- Add new enum values (at end)
+- Add indices
+
+❌ **PROHIBITED:**
+- Drop tables/columns
+- Rename anything
+- Change column types
+- Add NOT NULL to existing columns
+- Remove enum values
+
+For breaking changes, use multi-phase deployment strategy (see MIGRATION_POLICY.md).
+
+## 🎯 Response Contract Rules
+
+1. Never remove/rename existing fields
+2. New fields must be optional/nullable
+3. Consistent error codes (400/401/403/404/409/500)
+4. Flat JSON responses (no wrapper inconsistencies)
+5. Maintain existing endpoint URLs
+
+## 📦 Package Scripts
+
+```json
+{
+  "start:dev": "nest start --watch",
+  "start:prod": "node dist/main",
+  "build": "nest build",
+  "test": "jest",
+  "test:e2e": "jest --config ./test/jest-e2e.json",
+  "prisma:generate": "prisma generate",
+  "prisma:migrate:dev": "prisma migrate dev",
+  "prisma:migrate:deploy": "prisma migrate deploy",
+  "prisma:studio": "prisma studio"
+}
+```
+
+## 🔄 Version History
+
+### Current: v1.0.0
+- ✅ Trip requests system (booking + chat)
+- ✅ Chat membership with message types
+- ✅ Payment tracking (MVP)
+- ✅ Backward-compatible architecture
+- ✅ Safe migration policy
+- ✅ Comprehensive documentation
+
+### Upcoming: v1.1.0
+- Real-time messaging (WebSockets)
+- Payment provider integration
+- Advanced search/filtering
+- User ratings system
+- Trip history
+
+## 📞 Support
+
+- **Documentation**: See `docs/` directory
+- **Issues**: GitHub Issues
+- **Email**: support@travelmate.com
+
+## 📄 License
+
+[Your License Here]
+
+## 👥 Team
+
+Built with ❤️ by the Travel Mate team
+
+---
+
+**Ready to get started?** Follow the [Local Development Guide](docs/LOCAL_DEVELOPMENT.md)!

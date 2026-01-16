@@ -1,8 +1,7 @@
-import { Controller, Get, Post, Body, Param, Req, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Req } from '@nestjs/common';
 import { TripsService } from './trips.service';
 import { Public } from '../auth/public.decorator';
 import { TripResponseDto, TripDetailResponseDto, CreateTripDto } from '../dtos/trip.dto';
-import { BookTripDto } from '../dtos/booking.dto';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -31,21 +30,6 @@ export class TripsController {
     @Body() createTripDto: CreateTripDto,
     @Req() req: AuthenticatedRequest
   ): Promise<TripResponseDto> {
-    // TODO: Remove debug logs after verification
-    console.log('DEBUG: createTripDto.departureDateTime raw:', createTripDto.departureDateTime);
-    console.log('DEBUG: createTripDto.departureDateTime type:', typeof createTripDto.departureDateTime);
-    console.log('DEBUG: createTripDto.departureDateTime instanceof Date:', createTripDto.departureDateTime instanceof Date);
-    console.log('DEBUG: createTripDto.departureDateTime is future:', createTripDto.departureDateTime > new Date());
-
     return this.tripsService.create(req.user.sub, createTripDto);
-  }
-
-  @Post(':id/book')
-  async bookTrip(
-    @Param('id') id: string,
-    @Body() bookTripDto: BookTripDto,
-    @Req() req: AuthenticatedRequest
-  ): Promise<TripResponseDto> {
-    return this.tripsService.bookTrip(id, req.user.sub, bookTripDto.seats);
   }
 }

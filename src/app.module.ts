@@ -6,6 +6,7 @@ import { HealthModule } from './health/health.module';
 import { ChatsModule } from './chats/chats.module';
 import { RequestsModule } from './requests/requests.module';
 import { PaymentsModule } from './payments/payments.module';
+import { VehiclesModule } from './vehicles/vehicles.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
@@ -22,6 +23,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     ChatsModule,
     RequestsModule,
     PaymentsModule,
+    VehiclesModule,
     HealthModule,
   ],
 })

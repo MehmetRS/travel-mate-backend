@@ -1,5 +1,5 @@
 import { Expose, Type } from 'class-transformer';
-import { IsString, IsNumber, IsDate, IsOptional, Min, IsUUID, MinDate } from 'class-validator';
+import { IsString, IsNumber, IsDate, IsOptional, Min, IsUUID, MinDate, IsNotEmpty } from 'class-validator';
 
 // Request DTOs
 export class CreateTripDto {
@@ -28,7 +28,8 @@ export class CreateTripDto {
   @IsOptional()
   description?: string;
 
-  @IsUUID()
+  @IsString()
+  @IsNotEmpty()
   vehicleId: string;
 }
 

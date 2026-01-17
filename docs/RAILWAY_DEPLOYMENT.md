@@ -105,7 +105,7 @@ Monitor the deployment logs in Railway dashboard.
 
 ### For Schema Changes (Migrations)
 
-⚠️ **IMPORTANT: Follow these steps carefully**
+ **IMPORTANT: Follow these steps carefully**
 
 #### Step 1: Create Migration Locally
 
@@ -490,20 +490,20 @@ Consider integrating:
 
 ## Summary: Deploy Checklist
 
-✅ **Before Every Deployment:**
+ **Before Every Deployment:**
 1. Tests pass locally: `npm run test:e2e`
 2. Linting passes: `npm run lint`
 3. Build succeeds: `npm run build`
 4. Changes reviewed by team
 
-✅ **For Migration Deployments:**
+ **For Migration Deployments:**
 1. Follow MIGRATION_POLICY.md
 2. Migration tested locally
 3. SQL reviewed for safety
 4. Rollback plan ready
 5. Team notified of deployment
 
-✅ **After Deployment:**
+ **After Deployment:**
 1. Check Railway logs for errors
 2. Test critical endpoints
 3. Monitor for 15-30 minutes

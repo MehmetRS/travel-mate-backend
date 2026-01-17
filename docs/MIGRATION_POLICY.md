@@ -8,7 +8,7 @@ This document defines the rules for database schema evolution to ensure zero-dow
 
 **Never perform destructive changes on production databases.**
 
-## ✅ SAFE Operations (Allowed)
+##  SAFE Operations (Allowed)
 
 ### 1. Adding New Tables
 ```prisma
@@ -24,7 +24,7 @@ model NewFeature {
 model User {
   id       String  @id
   email    String
-  phone    String? // ✅ New nullable field
+  phone    String? //  New nullable field
 }
 ```
 
@@ -32,8 +32,8 @@ model User {
 ```prisma
 model Trip {
   id        String   @id
-  status    String   @default("ACTIVE") // ✅ Has default value
-  createdAt DateTime @default(now())    // ✅ Has default value
+  status    String   @default("ACTIVE") //  Has default value
+  createdAt DateTime @default(now())    //  Has default value
 }
 ```
 
@@ -42,7 +42,7 @@ model Trip {
 enum RequestType {
   BOOKING
   CHAT
-  RIDE_SHARE // ✅ New value added at end
+  RIDE_SHARE //  New value added at end
 }
 ```
 
@@ -50,7 +50,7 @@ enum RequestType {
 ```prisma
 model Trip {
   origin String
-  @@index([origin]) // ✅ Improves performance, no data change
+  @@index([origin]) //  Improves performance, no data change
 }
 ```
 
@@ -58,18 +58,18 @@ model Trip {
 ```prisma
 model Payment {
   id        String  @id
-  requestId String? // ✅ Nullable
+  requestId String? //  Nullable
   request   Request? @relation(fields: [requestId], references: [id])
 }
 ```
 
 ---
 
-## ❌ UNSAFE Operations (Prohibited in Production)
+##  UNSAFE Operations (Prohibited in Production)
 
 ### 1. Dropping Tables
 ```prisma
-// ❌ NEVER DO THIS
+//  NEVER DO THIS
 // model OldTable { ... } // Removed - data loss!
 ```
 
@@ -78,7 +78,7 @@ model Payment {
 model User {
   id    String @id
   email String
-  // ❌ removed: phone String - breaks old code!
+  //  removed: phone String - breaks old code!
 }
 ```
 
@@ -86,15 +86,15 @@ model User {
 ```prisma
 model Trip {
   id          String @id
-  origin      String // ❌ Was "from" - breaks existing queries!
+  origin      String //  Was "from" - breaks existing queries!
 }
 ```
 
 ### 4. Changing Column Types
 ```prisma
 model Trip {
-  id    String @id // ❌ Was Int - breaks existing data!
-  price String     // ❌ Was Float - type mismatch!
+  id    String @id //  Was Int - breaks existing data!
+  price String     //  Was Float - type mismatch!
 }
 ```
 
@@ -102,7 +102,7 @@ model Trip {
 ```prisma
 model User {
   id    String  @id
-  phone String  // ❌ Was String? - existing rows have NULL!
+  phone String  //  Was String? - existing rows have NULL!
 }
 ```
 
@@ -110,7 +110,7 @@ model User {
 ```prisma
 enum Status {
   ACTIVE
-  // ❌ removed: INACTIVE - existing data may use it!
+  //  removed: INACTIVE - existing data may use it!
 }
 ```
 
@@ -246,7 +246,7 @@ Before merging a migration PR:
 ```prisma
 model User {
   email    String
-  username String  // ❌ Required, but existing rows don't have it!
+  username String  //  Required, but existing rows don't have it!
 }
 ```
 
@@ -254,7 +254,7 @@ model User {
 ```prisma
 model User {
   email    String
-  username String? // ✅ Nullable first, backfill later, make required in phase 2
+  username String? //  Nullable first, backfill later, make required in phase 2
 }
 ```
 
@@ -264,7 +264,7 @@ model User {
 ```prisma
 model Payment {
   id       String  @id
-  tripId   String  // ❌ Required, breaks if trip doesn't exist
+  tripId   String  //  Required, breaks if trip doesn't exist
   trip     Trip    @relation(fields: [tripId], references: [id])
 }
 ```
@@ -273,7 +273,7 @@ model Payment {
 ```prisma
 model Payment {
   id     String  @id
-  tripId String? // ✅ Nullable, can be linked later
+  tripId String? //  Nullable, can be linked later
   trip   Trip?   @relation(fields: [tripId], references: [id])
 }
 ```
@@ -317,13 +317,13 @@ DATABASE_URL="postgresql://localhost:5432/travel_mate_dev?schema=public"
 
 ## Summary
 
-✅ **DO:**
+ **DO:**
 - Add nullable columns
 - Add new tables
 - Add indices
 - Use multi-phase approach for breaking changes
 
-❌ **DON'T:**
+ **DON'T:**
 - Drop tables or columns
 - Rename anything
 - Change column types

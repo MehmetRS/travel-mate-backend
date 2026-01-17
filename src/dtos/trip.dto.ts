@@ -28,7 +28,8 @@ export class CreateTripDto {
   @IsOptional()
   description?: string;
 
-  @IsUUID()
+  @IsString()
+  @IsNotEmpty()
   vehicleId: string;
 }
 

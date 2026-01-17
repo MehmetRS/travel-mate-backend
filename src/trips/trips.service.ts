@@ -155,4 +155,120 @@ export class TripsService {
     // Transform to DTO
     return plainToInstance(TripDetailResponseDto, response, { excludeExtraneousValues: true });
   }
+
+  async findAllWithFilters(query: any): Promise<TripResponseDto[]> {
+    const {
+      origin,
+      destination,
+      date,
+      minPrice,
+      maxPrice,
+      minSeats,
+      availableOnly,
+    } = query;
+
+    const where: Prisma.TripWhereInput = {};
+
+    // ORIGIN
+    if (origin) {
+      where.from = {
+        contains: origin,
+        mode: 'insensitive',
+      };
+    }
+
+    // DESTINATION
+    if (destination) {
+      where.to = {
+        contains: destination,
+        mode: 'insensitive',
+      };
+    }
+
+    // PRICE
+    if (minPrice || maxPrice) {
+      where.price = {};
+      if (minPrice) {
+        where.price.gte = Number(minPrice);
+      }
+      if (maxPrice) {
+        where.price.lte = Number(maxPrice);
+      }
+    }
+
+    // SEATS
+    if (minSeats) {
+      where.availableSeats = {
+        gte: Number(minSeats),
+      };
+    }
+
+    // AVAILABLE ONLY
+    if (availableOnly === 'true') {
+      if (where.availableSeats && typeof where.availableSeats === 'object' && 'gte' in where.availableSeats) {
+        // If there's already a condition (from minSeats), combine them
+        const existingCondition = where.availableSeats as { gte: number };
+        where.availableSeats = {
+          gte: existingCondition.gte,
+          gt: 0,
+        };
+      } else {
+        where.availableSeats = {
+          gt: 0,
+        };
+      }
+    }
+
+    // DATE (single day filter)
+    if (date) {
+      const start = new Date(date);
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+
+      where.date = {
+        gte: start,
+        lte: end,
+      };
+    }
+
+    const trips = await this.prisma.trip.findMany({
+      where,
+      orderBy: {
+        date: 'asc',
+      },
+      include: {
+        user: {
+          include: {
+            vehicle: true
+          }
+        }
+      }
+    }) as unknown as TripWithRelations[];
+
+    const responses: TripResponse[] = trips.map(trip => ({
+      id: trip.id,
+      origin: trip.from,
+      destination: trip.to,
+      departureDateTime: trip.date,
+      price: trip.price,
+      totalSeats: trip.totalSeats,
+      availableSeats: trip.availableSeats,
+      isFull: trip.isFull,
+      description: trip.description ?? undefined,
+      driver: {
+        id: trip.user.id,
+        name: trip.user.name || 'Unknown',
+        rating: trip.user.rating,
+        isVerified: trip.user.isVerified,
+        vehicle: trip.user.vehicle ? plainToInstance(VehicleDto, trip.user.vehicle) : null
+      }
+    }));
+
+    // Transform to DTO
+    return responses.map(response =>
+      plainToInstance(TripResponseDto, response, { excludeExtraneousValues: true })
+    );
+  }
 }

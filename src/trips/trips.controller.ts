@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Req, Query } from '@nestjs/common';
 import { TripsService } from './trips.service';
 import { Public } from '../auth/public.decorator';
 import { TripResponseDto, TripDetailResponseDto, CreateTripDto } from '../dtos/trip.dto';
@@ -15,8 +15,8 @@ export class TripsController {
 
   @Public()
   @Get()
-  async findAll(): Promise<TripResponseDto[]> {
-    return this.tripsService.findAll();
+  async findAll(@Query() query: any): Promise<TripResponseDto[]> {
+    return this.tripsService.findAllWithFilters(query);
   }
 
   @Public()

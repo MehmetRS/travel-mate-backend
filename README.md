@@ -330,7 +330,7 @@ For breaking changes, use multi-phase deployment strategy (see MIGRATION_POLICY.
 
 ##  License
 
-[Your License Here]
+[In the future]
 
 ##  Team
 

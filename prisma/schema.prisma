@@ -31,6 +31,7 @@ model Vehicle {
   model        String
   seatCount    Int
   licensePlate String?
+  trips        Trip[]
   createdAt    DateTime @default(now())
 
   @@index([userId])
@@ -53,13 +54,16 @@ model Trip {
   description    String?
   isFull         Boolean       @default(false)
   userId         String
+  vehicleId      String
   user           User          @relation(fields: [userId], references: [id])
+  vehicle        Vehicle       @relation(fields: [vehicleId], references: [id])
   createdAt      DateTime      @default(now())
   chat           Chat?
   requests       TripRequest[]
   payments       Payment[]
 
   @@index([userId])
+  @@index([vehicleId])
   @@index([from])
   @@index([to])
   @@index([date])

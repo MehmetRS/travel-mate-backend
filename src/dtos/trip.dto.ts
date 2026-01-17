@@ -29,8 +29,7 @@ export class CreateTripDto {
   description?: string;
 
   @IsUUID()
-  @IsOptional()
-  vehicleId?: string;
+  vehicleId: string;
 }
 
 // Response DTOs

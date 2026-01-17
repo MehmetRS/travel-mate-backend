@@ -86,6 +86,7 @@ export class TripsService {
         isFull: false,
         description: dto.description || null,
         userId,
+        vehicleId: dto.vehicleId,
       },
       include: {
         user: {

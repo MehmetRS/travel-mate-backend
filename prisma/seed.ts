@@ -71,12 +71,12 @@ async function main() {
         data: {
           ...userData,
           password: hashedPassword,
-          vehicle: {
+          vehicles: {
             create: vehicles[index],
           },
         },
         include: {
-          vehicle: true,
+          vehicles: true,
         },
       });
       return user;
@@ -103,6 +103,7 @@ async function main() {
       // seatsTotal, seatsAvailable, and isFull are computed in API layer
       description: 'Hızlı ve konforlu yolculuk.',
       userId: createdUsers[0].id,
+      vehicleId: createdUsers[0].vehicles[0].id,
     },
     {
       from: 'İzmir',
@@ -111,6 +112,7 @@ async function main() {
       price: 249.99,
       description: 'Sahil rotasında keyifli bir yolculuk.',
       userId: createdUsers[1].id,
+      vehicleId: createdUsers[1].vehicles[0].id,
     },
     // Available trips
     {
@@ -120,6 +122,7 @@ async function main() {
       price: 289.99,
       description: 'Sabah erkenden yola çıkış.',
       userId: createdUsers[0].id,
+      vehicleId: createdUsers[0].vehicles[0].id,
     },
     {
       from: 'Antalya',
@@ -128,6 +131,7 @@ async function main() {
       price: 239.99,
       description: 'Akşam yolculuğu, molalı.',
       userId: createdUsers[1].id,
+      vehicleId: createdUsers[1].vehicles[0].id,
     },
     {
       from: 'Bursa',
@@ -136,6 +140,7 @@ async function main() {
       price: 159.99,
       description: 'Öğlen yolculuğu.',
       userId: createdUsers[2].id,
+      vehicleId: createdUsers[2].vehicles[0].id,
     },
     {
       from: 'Eskişehir',
@@ -144,6 +149,7 @@ async function main() {
       price: 179.99,
       description: 'Sabah yolculuğu, öğrenciler tercih edilir.',
       userId: createdUsers[2].id,
+      vehicleId: createdUsers[2].vehicles[0].id,
     },
   ];
 

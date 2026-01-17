@@ -13,7 +13,7 @@ model User {
   password     String
   rating       Float         @default(4.5) // Mock rating for demo
   isVerified   Boolean       @default(false)
-  vehicle      Vehicle?
+  vehicles     Vehicle[]
   trips        Trip[]
   messages     Message[]
   chatMembers  ChatMember[]
@@ -24,7 +24,7 @@ model User {
 
 model Vehicle {
   id           String   @id @default(cuid())
-  userId       String   @unique
+  userId       String
   user         User     @relation(fields: [userId], references: [id])
   type         VehicleType
   brand        String
@@ -32,6 +32,8 @@ model Vehicle {
   seatCount    Int
   licensePlate String?
   createdAt    DateTime @default(now())
+
+  @@index([userId])
 }
 
 enum VehicleType {

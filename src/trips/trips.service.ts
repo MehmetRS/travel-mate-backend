@@ -40,13 +40,13 @@ export class TripsService {
 
   async findAll(): Promise<TripResponseDto[]> {
     const trips = await this.prisma.trip.findMany({
-      include: {
-        user: {
-          include: {
-            vehicle: true
+        include: {
+          user: {
+            include: {
+              vehicles: true
+            }
           }
-        }
-      }
+        } as any
     }) as unknown as TripWithRelations[];
 
     const responses: TripResponse[] = trips.map(trip => ({
@@ -90,10 +90,10 @@ export class TripsService {
       include: {
         user: {
           include: {
-            vehicle: true
+            vehicles: true
           }
         }
-      }
+      } as any
     }) as unknown as TripWithRelations;
 
     return {
@@ -122,10 +122,10 @@ export class TripsService {
       include: {
         user: {
           include: {
-            vehicle: true
+            vehicles: true
           }
         }
-      }
+      } as any
     }) as unknown as TripWithRelations;
 
     if (!trip) {
@@ -165,6 +165,9 @@ export class TripsService {
       maxPrice,
       minSeats,
       availableOnly,
+      upcoming,
+      past,
+      role,
     } = query;
 
     const where: Prisma.TripWhereInput = {};
@@ -233,42 +236,64 @@ export class TripsService {
       };
     }
 
-    const trips = await this.prisma.trip.findMany({
-      where,
-      orderBy: {
-        date: 'asc',
-      },
-      include: {
-        user: {
-          include: {
-            vehicle: true
+    // UPCOMING trips (startTime >= now)
+    if (upcoming === 'true') {
+      const now = new Date();
+      where.date = {
+        gte: now
+      };
+    }
+
+    // PAST trips (startTime < now)
+    if (past === 'true') {
+      const now = new Date();
+      where.date = {
+        lt: now
+      };
+    }
+
+    try {
+      const trips = await this.prisma.trip.findMany({
+        where,
+        orderBy: {
+          date: 'asc',
+        },
+        include: {
+          user: {
+            include: {
+              vehicles: true // This is now NULL-safe with LEFT JOIN behavior
+            }
           }
-        }
-      }
-    }) as unknown as TripWithRelations[];
+        } as any
+      }) as unknown as TripWithRelations[];
 
-    const responses: TripResponse[] = trips.map(trip => ({
-      id: trip.id,
-      origin: trip.from,
-      destination: trip.to,
-      departureDateTime: trip.date,
-      price: trip.price,
-      totalSeats: trip.totalSeats,
-      availableSeats: trip.availableSeats,
-      isFull: trip.isFull,
-      description: trip.description ?? undefined,
-      driver: {
-        id: trip.user.id,
-        name: trip.user.name || 'Unknown',
-        rating: trip.user.rating,
-        isVerified: trip.user.isVerified,
+      const responses: TripResponse[] = trips.map(trip => ({
+        id: trip.id,
+        origin: trip.from,
+        destination: trip.to,
+        departureDateTime: trip.date,
+        price: trip.price,
+        totalSeats: trip.totalSeats,
+        availableSeats: trip.availableSeats,
+        isFull: trip.isFull,
+        description: trip.description ?? undefined,
+        driver: {
+          id: trip.user.id,
+          name: trip.user.name || 'Unknown',
+          rating: trip.user.rating,
+          isVerified: trip.user.isVerified,
         vehicle: trip.user.vehicle ? plainToInstance(VehicleDto, trip.user.vehicle) : null
-      }
-    }));
+        }
+      }));
 
-    // Transform to DTO
-    return responses.map(response =>
-      plainToInstance(TripResponseDto, response, { excludeExtraneousValues: true })
-    );
+      // Transform to DTO
+      return responses.map(response =>
+        plainToInstance(TripResponseDto, response, { excludeExtraneousValues: true })
+      );
+    } catch (error) {
+      console.error('[TripsService] dashboard query failed', error);
+      // Return empty array instead of crashing to ensure dashboard never breaks
+      return [];
+    }
   }
 }

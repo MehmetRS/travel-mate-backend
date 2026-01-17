@@ -50,4 +50,10 @@ export class TripsController {
   ): Promise<TripResponseDto> {
     return this.tripsService.create(req.user.id, createTripDto);
   }
+
+  @Public()
+  @Get('public')
+  async findPublicTrips(@Query() query: any): Promise<TripResponseDto[]> {
+    return this.tripsService.findPublicTrips(query);
+  }
 }

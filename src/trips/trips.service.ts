@@ -465,4 +465,119 @@ export class TripsService {
       };
     }
   }
+
+  /**
+   * Find public trips that are available for booking
+   * This method does NOT use visibility rules and is accessible to unauthenticated users
+   */
+  async findPublicTrips(query: any): Promise<TripResponseDto[]> {
+    const {
+      origin,
+      destination,
+      departureDateTime,
+      minPrice,
+      maxPrice,
+      minSeats,
+    } = query;
+
+    const where: Prisma.TripWhereInput = {
+      // Public trips must be available (not full and not completed)
+      isFull: false,
+      isCompleted: false
+    };
+
+    // ORIGIN
+    if (origin) {
+      where.from = {
+        contains: origin,
+        mode: 'insensitive',
+      };
+    }
+
+    // DESTINATION
+    if (destination) {
+      where.to = {
+        contains: destination,
+        mode: 'insensitive',
+      };
+    }
+
+    // PRICE
+    if (minPrice || maxPrice) {
+      where.price = {};
+      if (minPrice) {
+        where.price.gte = Number(minPrice);
+      }
+      if (maxPrice) {
+        where.price.lte = Number(maxPrice);
+      }
+    }
+
+    // SEATS
+    if (minSeats) {
+      where.availableSeats = {
+        gte: Number(minSeats),
+      };
+    }
+
+    // DEPARTURE DATE TIME
+    if (departureDateTime) {
+      const date = new Date(departureDateTime);
+      const start = new Date(date);
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+
+      where.date = {
+        gte: start,
+        lte: end,
+      };
+    }
+
+    try {
+      const trips = await this.prisma.trip.findMany({
+        where,
+        orderBy: {
+          date: 'asc',
+        },
+        include: {
+          user: {
+            include: {
+              vehicles: true
+            }
+          }
+        } as any
+      }) as unknown as TripWithRelations[];
+
+      const responses: TripResponse[] = trips.map(trip => ({
+        id: trip.id,
+        origin: trip.from,
+        destination: trip.to,
+        departureDateTime: trip.date,
+        price: trip.price,
+        totalSeats: trip.totalSeats,
+        availableSeats: trip.availableSeats,
+        isFull: trip.isFull,
+        description: trip.description ?? undefined,
+        driver: {
+          id: trip.user.id,
+          name: trip.user.name || 'Unknown',
+          rating: trip.user.rating,
+          isVerified: trip.user.isVerified,
+          vehicle: trip.user.vehicle ? plainToInstance(VehicleDto, trip.user.vehicle) : null
+        }
+      }));
+
+      // Transform to DTO
+      return responses.map(response =>
+        plainToInstance(TripResponseDto, response, { excludeExtraneousValues: true })
+      );
+    } catch (error) {
+      console.error('[TripsService] findPublicTrips failed', error);
+      // Return empty array instead of crashing
+      return [];
+    }
+  }
 }
+

@@ -23,13 +23,21 @@ model User {
 }
 
 model Vehicle {
-  id          String    @id @default(cuid())
-  vehicleType String
-  brand       String
-  model       String
-  seats       Int
-  userId      String    @unique
-  user        User      @relation(fields: [userId], references: [id])
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  type         VehicleType
+  brand        String
+  model        String
+  seatCount    Int
+  licensePlate String?
+  createdAt    DateTime @default(now())
+}
+
+enum VehicleType {
+  CAR
+  MOTORCYCLE
+  VAN
 }
 
 model Trip {

@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, VehicleType } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcrypt';
 
@@ -12,22 +12,25 @@ const prisma = new PrismaClient({ adapter });
 // Demo vehicle data
 const vehicles = [
   {
-    vehicleType: 'Sedan',
+    type: VehicleType.CAR,
     brand: 'Toyota',
     model: 'Corolla',
-    seats: 4,
+    seatCount: 4,
+    licensePlate: '34ABC123'
   },
   {
-    vehicleType: 'SUV',
+    type: VehicleType.VAN,
     brand: 'Honda',
     model: 'CR-V',
-    seats: 5,
+    seatCount: 5,
+    licensePlate: '35XYZ789'
   },
   {
-    vehicleType: 'Hatchback',
+    type: VehicleType.CAR,
     brand: 'Volkswagen',
     model: 'Golf',
-    seats: 4,
+    seatCount: 4,
+    licensePlate: '36DEF456'
   },
 ];
 

@@ -2,14 +2,14 @@
 
 A robust, scalable NestJS backend for the Travel Mate carpooling platform with backward-compatible architecture and safe database migrations.
 
-## 🚀 Quick Start
+ Quick Start
 
-### Prerequisites
+Prerequisites
 - Node.js 18+
 - PostgreSQL 14+
 - npm or yarn
 
-### Local Development
+ Local Development
 
 ```bash
 # Install dependencies
@@ -26,14 +26,14 @@ npm run start:dev
 
 Server runs at `http://localhost:3000`
 
-## 📚 Documentation
+# Documentation
 
 - **[API Contract](docs/API_CONTRACT.md)** - Complete API endpoint documentation with request/response schemas
 - **[Migration Policy](docs/MIGRATION_POLICY.md)** - Database migration rules for zero-downtime deployments
 - **[Local Development](docs/LOCAL_DEVELOPMENT.md)** - Complete local setup and development workflow
 - **[Railway Deployment](docs/RAILWAY_DEPLOYMENT.md)** - Production deployment guide for Railway
 
-## 🏗️ Architecture
+##  Architecture
 
 ### Core Principles
 
@@ -51,7 +51,7 @@ Server runs at `http://localhost:3000`
 - **Validation**: class-validator
 - **Rate Limiting**: @nestjs/throttler
 
-## 🎯 Key Features
+##  Key Features
 
 ### Trip Requests System (New)
 - **Booking Requests**: Users request seats, driver accepts/rejects
@@ -72,7 +72,7 @@ Server runs at `http://localhost:3000`
 - **Extensible**: Ready for payment provider integration
 - **Access Control**: Only payer and trip owner can view
 
-## 📂 Project Structure
+##  Project Structure
 
 ```
 src/
@@ -100,7 +100,7 @@ docs/
 └── RAILWAY_DEPLOYMENT.md     # Production deployment
 ```
 
-## 🔐 Authentication
+##  Authentication
 
 All authenticated endpoints require a Bearer token:
 
@@ -113,7 +113,7 @@ Get token via:
 - `POST /auth/login` - Login existing account
 - `GET /auth/me` - Verify current session
 
-## 🛣️ API Endpoints
+##  API Endpoints
 
 ### Public Endpoints (No Auth)
 - `GET /trips` - List all trips
@@ -134,7 +134,7 @@ Get token via:
 
 See [API_CONTRACT.md](docs/API_CONTRACT.md) for complete documentation.
 
-## 🗄️ Database Schema
+##  Database Schema
 
 Key models:
 - **User** - Users with authentication
@@ -146,7 +146,7 @@ Key models:
 - **Message** - Chat messages with types (TEXT/IMAGE/LOCATION)
 - **Payment** - Payment tracking
 
-## 🧪 Testing
+##  Testing
 
 ```bash
 # Unit tests
@@ -162,7 +162,7 @@ npm run test:cov
 npm run test:watch
 ```
 
-## 🔨 Development Workflow
+##  Development Workflow
 
 ### Making Schema Changes
 
@@ -180,7 +180,7 @@ npm run format        # Format code
 npm run build         # Type check
 ```
 
-## 🚢 Deployment
+##  Deployment
 
 ### Railway (Production)
 
@@ -199,7 +199,7 @@ git push origin main
 
 See [RAILWAY_DEPLOYMENT.md](docs/RAILWAY_DEPLOYMENT.md) for complete guide.
 
-## 🔒 Security
+##  Security
 
 - JWT authentication with secure secrets
 - Rate limiting (ThrottlerModule)
@@ -209,14 +209,14 @@ See [RAILWAY_DEPLOYMENT.md](docs/RAILWAY_DEPLOYMENT.md) for complete guide.
 - Password hashing (bcrypt)
 - Structured logging without sensitive data
 
-## 📊 Monitoring
+##  Monitoring
 
 - Health endpoint: `GET /health`
 - Structured logging with correlation IDs
 - Request/response logging interceptor
 - Error tracking with exception filters
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Common Issues
 
@@ -239,7 +239,7 @@ npx prisma migrate status
 # Follow MIGRATION_POLICY.md for safe practices
 ```
 
-## 📝 Environment Variables
+##  Environment Variables
 
 Required variables:
 
@@ -252,7 +252,7 @@ ALLOWED_ORIGINS="http://localhost:3000"
 
 See `.env.example` for complete list.
 
-## 🤝 Contributing
+##  Contributing
 
 1. Create feature branch: `git checkout -b feature/amazing-feature`
 2. Follow MIGRATION_POLICY.md for schema changes
@@ -263,16 +263,16 @@ See `.env.example` for complete list.
 7. Push: `git push origin feature/amazing-feature`
 8. Open Pull Request
 
-## 📋 Migration Policy Summary
+##  Migration Policy Summary
 
-✅ **ALLOWED:**
+ **ALLOWED:**
 - Add new tables
 - Add nullable columns
 - Add columns with defaults
 - Add new enum values (at end)
 - Add indices
 
-❌ **PROHIBITED:**
+ **PROHIBITED:**
 - Drop tables/columns
 - Rename anything
 - Change column types
@@ -281,7 +281,7 @@ See `.env.example` for complete list.
 
 For breaking changes, use multi-phase deployment strategy (see MIGRATION_POLICY.md).
 
-## 🎯 Response Contract Rules
+##  Response Contract Rules
 
 1. Never remove/rename existing fields
 2. New fields must be optional/nullable
@@ -289,7 +289,7 @@ For breaking changes, use multi-phase deployment strategy (see MIGRATION_POLICY.
 4. Flat JSON responses (no wrapper inconsistencies)
 5. Maintain existing endpoint URLs
 
-## 📦 Package Scripts
+##  Package Scripts
 
 ```json
 {
@@ -305,15 +305,15 @@ For breaking changes, use multi-phase deployment strategy (see MIGRATION_POLICY.
 }
 ```
 
-## 🔄 Version History
+##  Version History
 
 ### Current: v1.0.0
-- ✅ Trip requests system (booking + chat)
-- ✅ Chat membership with message types
-- ✅ Payment tracking (MVP)
-- ✅ Backward-compatible architecture
-- ✅ Safe migration policy
-- ✅ Comprehensive documentation
+-  Trip requests system (booking + chat)
+-  Chat membership with message types
+-  Payment tracking (MVP)
+-  Backward-compatible architecture
+-  Safe migration policy
+-  Comprehensive documentation
 
 ### Upcoming: v1.1.0
 - Real-time messaging (WebSockets)
@@ -322,19 +322,19 @@ For breaking changes, use multi-phase deployment strategy (see MIGRATION_POLICY.
 - User ratings system
 - Trip history
 
-## 📞 Support
+##  Support
 
 - **Documentation**: See `docs/` directory
 - **Issues**: GitHub Issues
 - **Email**: support@travelmate.com
 
-## 📄 License
+##  License
 
 [Your License Here]
 
-## 👥 Team
+##  Team
 
-Built with ❤️ by the Travel Mate team
+By the Travel Mate team
 
 ---
 

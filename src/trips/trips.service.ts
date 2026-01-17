@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TripResponseDto, TripDetailResponseDto, CreateTripDto, VehicleDto } from '../dtos/trip.dto';
 import { plainToInstance } from 'class-transformer';
@@ -75,46 +75,77 @@ export class TripsService {
   }
 
   async create(userId: string, dto: CreateTripDto): Promise<TripResponseDto> {
-    const trip = await this.prisma.trip.create({
-      data: {
-        from: dto.origin,
-        to: dto.destination,
-        date: dto.departureDateTime,
-        price: dto.price,
-        totalSeats: dto.availableSeats,
-        availableSeats: dto.availableSeats,
-        isFull: false,
-        description: dto.description || null,
-        userId,
-        vehicleId: dto.vehicleId,
-      },
-      include: {
-        user: {
-          include: {
-            vehicles: true
-          }
+    try {
+      // Validate vehicle existence and ownership
+      const vehicle = await this.prisma.vehicle.findUnique({
+        where: {
+          id: dto.vehicleId
         }
-      } as any
-    }) as unknown as TripWithRelations;
+      });
 
-    return {
-      id: trip.id,
-      origin: trip.from,
-      destination: trip.to,
-      departureDateTime: trip.date,
-      price: trip.price,
-      totalSeats: trip.totalSeats,
-      availableSeats: trip.availableSeats,
-      isFull: trip.isFull,
-      description: trip.description ?? undefined,
-      driver: {
-        id: trip.user.id,
-        name: trip.user.name || 'Unknown',
-        rating: trip.user.rating,
-        isVerified: trip.user.isVerified,
-        vehicle: trip.user.vehicle ? plainToInstance(VehicleDto, trip.user.vehicle) : null
+      if (!vehicle) {
+        throw new BadRequestException("Vehicle not found");
       }
-    };
+
+      if (vehicle.userId !== userId) {
+        throw new ForbiddenException("Vehicle does not belong to user");
+      }
+
+      // Create the trip with validated vehicle
+      const trip = await this.prisma.trip.create({
+        data: {
+          from: dto.origin,
+          to: dto.destination,
+          date: dto.departureDateTime,
+          price: dto.price,
+          totalSeats: dto.availableSeats,
+          availableSeats: dto.availableSeats,
+          isFull: false,
+          description: dto.description || null,
+          userId,
+          vehicleId: dto.vehicleId,
+        },
+        include: {
+          user: {
+            include: {
+              vehicles: true
+            }
+          }
+        } as any
+      }) as unknown as TripWithRelations;
+
+      return {
+        id: trip.id,
+        origin: trip.from,
+        destination: trip.to,
+        departureDateTime: trip.date,
+        price: trip.price,
+        totalSeats: trip.totalSeats,
+        availableSeats: trip.availableSeats,
+        isFull: trip.isFull,
+        description: trip.description ?? undefined,
+        driver: {
+          id: trip.user.id,
+          name: trip.user.name || 'Unknown',
+          rating: trip.user.rating,
+          isVerified: trip.user.isVerified,
+          vehicle: trip.user.vehicle ? plainToInstance(VehicleDto, trip.user.vehicle) : null
+        }
+      };
+    } catch (error) {
+      console.error('[TripsService] create trip failed', error);
+
+      // Re-throw HttpExceptions (BadRequestException, ForbiddenException, etc.)
+      if (error instanceof BadRequestException ||
+          error instanceof ForbiddenException ||
+          error instanceof NotFoundException ||
+          error instanceof ConflictException) {
+        throw error;
+      }
+
+      // Fallback to InternalServerErrorException for unexpected errors
+      throw new InternalServerErrorException("Failed to create trip");
+    }
   }
 
   async findOne(id: string): Promise<TripDetailResponseDto> {

@@ -14,16 +14,33 @@ interface AuthenticatedRequest extends Request {
 export class TripsController {
   constructor(private readonly tripsService: TripsService) {}
 
-  @Public()
   @Get()
-  async findAll(@Query() query: any): Promise<TripResponseDto[]> {
-    return this.tripsService.findAllWithFilters(query);
+  async findAll(
+    @Query() query: any,
+    @Req() req: AuthenticatedRequest
+  ): Promise<TripResponseDto[]> {
+    return this.tripsService.findAllWithFilters(query, req.user.id);
   }
 
-  @Public()
+  @Get('dashboard')
+  async getDashboard(
+    @Req() req: AuthenticatedRequest
+  ): Promise<{
+    upcoming: TripResponseDto[];
+    past: {
+      pending: TripResponseDto[];
+      completed: TripResponseDto[];
+    }
+  }> {
+    return this.tripsService.getDashboardTrips(req.user.id);
+  }
+
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<TripDetailResponseDto> {
-    return this.tripsService.findOne(id);
+  async findOne(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest
+  ): Promise<TripDetailResponseDto> {
+    return this.tripsService.findOne(id, req.user.id);
   }
 
   @Post()

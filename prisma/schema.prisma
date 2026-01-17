@@ -19,6 +19,7 @@ model User {
   chatMembers  ChatMember[]
   tripRequests TripRequest[]
   payments     Payment[]
+  reservations TripReservation[]
   createdAt    DateTime      @default(now())
 }
 
@@ -53,6 +54,9 @@ model Trip {
   availableSeats Int           @default(0)
   description    String?
   isFull         Boolean       @default(false)
+  completedByDriver Boolean    @default(false)
+  completedByPassenger Boolean @default(false)
+  isCompleted    Boolean       @default(false)
   userId         String
   vehicleId      String
   user           User          @relation(fields: [userId], references: [id])
@@ -61,6 +65,7 @@ model Trip {
   chat           Chat?
   requests       TripRequest[]
   payments       Payment[]
+  reservations   TripReservation[]
 
   @@index([userId])
   @@index([vehicleId])
@@ -164,6 +169,21 @@ model Payment {
   @@index([tripId])
   @@index([payerId])
   @@index([requestId])
+}
+
+model TripReservation {
+  id               String    @id @default(cuid())
+  tripId           String
+  passengerId      String
+  passengerAccepted Boolean   @default(false)
+  driverAccepted   Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  trip      Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  passenger User   @relation(fields: [passengerId], references: [id])
+
+  @@unique([tripId, passengerId])
 }
 
 enum PaymentStatus {

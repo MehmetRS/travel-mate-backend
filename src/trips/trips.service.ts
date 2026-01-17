@@ -8,6 +8,9 @@ type TripWithRelations = Trip & {
   user: User & {
     vehicle: Vehicle | null;
   };
+  completedByDriver: boolean;
+  completedByPassenger: boolean;
+  isCompleted: boolean;
 };
 
 // Response types for consistent mapping
@@ -38,8 +41,36 @@ interface TripDetailResponse extends TripResponse {
 export class TripsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(): Promise<TripResponseDto[]> {
+  /**
+   * Builds a Prisma where clause for trip visibility rules
+   * A user can see a trip if:
+   * 1. They are the trip owner (driver)
+   * 2. They have a mutually accepted reservation for the trip
+   */
+  private buildVisibilityWhereClause(userId: string): Prisma.TripWhereInput {
+    return {
+      OR: [
+        // User is the trip owner (driver)
+        {
+          userId: userId
+        },
+        // User has a mutually accepted reservation
+        {
+          reservations: {
+            some: {
+              passengerId: userId,
+              passengerAccepted: true,
+              driverAccepted: true
+            }
+          }
+        }
+      ]
+    };
+  }
+
+  async findAll(userId: string): Promise<TripResponseDto[]> {
     const trips = await this.prisma.trip.findMany({
+        where: this.buildVisibilityWhereClause(userId),
         include: {
           user: {
             include: {
@@ -148,7 +179,7 @@ export class TripsService {
     }
   }
 
-  async findOne(id: string): Promise<TripDetailResponseDto> {
+  async findOne(id: string, userId: string): Promise<TripDetailResponseDto> {
     const trip = await this.prisma.trip.findUnique({
       where: { id },
       include: {
@@ -156,12 +187,25 @@ export class TripsService {
           include: {
             vehicles: true
           }
-        }
+        },
+        reservations: true // Need reservations to check visibility
       } as any
-    }) as unknown as TripWithRelations;
+    }) as unknown as TripWithRelations & { reservations: any[] };
 
     if (!trip) {
       throw new NotFoundException('Trip not found');
+    }
+
+    // Check visibility rules
+    const isOwner = trip.userId === userId;
+    const hasAcceptedReservation = trip.reservations.some(
+      reservation => reservation.passengerId === userId &&
+                    reservation.passengerAccepted === true &&
+                    reservation.driverAccepted === true
+    );
+
+    if (!isOwner && !hasAcceptedReservation) {
+      throw new ForbiddenException('You are not authorized to view this trip');
     }
 
     const response: TripDetailResponse = {
@@ -188,7 +232,7 @@ export class TripsService {
     return plainToInstance(TripDetailResponseDto, response, { excludeExtraneousValues: true });
   }
 
-  async findAllWithFilters(query: any): Promise<TripResponseDto[]> {
+  async findAllWithFilters(query: any, userId: string): Promise<TripResponseDto[]> {
     const {
       origin,
       destination,
@@ -202,7 +246,10 @@ export class TripsService {
       role,
     } = query;
 
-    const where: Prisma.TripWhereInput = {};
+    const where: Prisma.TripWhereInput = {
+      // Apply visibility rules first
+      ...this.buildVisibilityWhereClause(userId)
+    };
 
     // ORIGIN
     if (origin) {
@@ -326,6 +373,96 @@ export class TripsService {
       console.error('[TripsService] dashboard query failed', error);
       // Return empty array instead of crashing to ensure dashboard never breaks
       return [];
+    }
+  }
+
+  /**
+   * Get dashboard trips categorized into upcoming, past pending, and completed
+   */
+  async getDashboardTrips(userId: string): Promise<{
+    upcoming: TripResponseDto[];
+    past: {
+      pending: TripResponseDto[];
+      completed: TripResponseDto[];
+    }
+  }> {
+    try {
+      // Fetch all trips visible to the user
+      const trips = await this.prisma.trip.findMany({
+        where: this.buildVisibilityWhereClause(userId),
+        include: {
+          user: {
+            include: {
+              vehicles: true
+            }
+          }
+        } as any
+      }) as unknown as TripWithRelations[];
+
+      const now = new Date();
+
+      // Categorize trips
+      const upcoming: TripResponse[] = [];
+      const pastPending: TripResponse[] = [];
+      const pastCompleted: TripResponse[] = [];
+
+      trips.forEach(trip => {
+        const tripResponse: TripResponse = {
+          id: trip.id,
+          origin: trip.from,
+          destination: trip.to,
+          departureDateTime: trip.date,
+          price: trip.price,
+          totalSeats: trip.totalSeats,
+          availableSeats: trip.availableSeats,
+          isFull: trip.isFull,
+          description: trip.description ?? undefined,
+          driver: {
+            id: trip.user.id,
+            name: trip.user.name || 'Unknown',
+            rating: trip.user.rating,
+            isVerified: trip.user.isVerified,
+            vehicle: trip.user.vehicle ? plainToInstance(VehicleDto, trip.user.vehicle) : null
+          }
+        };
+
+        // Categorize based on completion status and departure time
+        if (trip.isCompleted) {
+          // Completed trips
+          pastCompleted.push(tripResponse);
+        } else if (trip.date > now) {
+          // Upcoming trips (departureDateTime > now, isCompleted === false)
+          upcoming.push(tripResponse);
+        } else {
+          // Past pending trips (departureDateTime <= now, isCompleted === false)
+          pastPending.push(tripResponse);
+        }
+      });
+
+      // Transform to DTOs
+      return {
+        upcoming: upcoming.map(response =>
+          plainToInstance(TripResponseDto, response, { excludeExtraneousValues: true })
+        ),
+        past: {
+          pending: pastPending.map(response =>
+            plainToInstance(TripResponseDto, response, { excludeExtraneousValues: true })
+          ),
+          completed: pastCompleted.map(response =>
+            plainToInstance(TripResponseDto, response, { excludeExtraneousValues: true })
+          )
+        }
+      };
+    } catch (error) {
+      console.error('[TripsService] getDashboardTrips failed', error);
+      // Return empty structure instead of crashing
+      return {
+        upcoming: [],
+        past: {
+          pending: [],
+          completed: []
+        }
+      };
     }
   }
 }

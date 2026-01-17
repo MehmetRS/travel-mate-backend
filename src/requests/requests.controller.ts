@@ -20,7 +20,7 @@ import { JwtAuthGuard } from '../auth/jwt.guard';
 
 interface AuthenticatedRequest extends Request {
   user: {
-    sub: string;
+    id: string;
     email: string;
   };
 }
@@ -37,7 +37,7 @@ export class RequestsController {
     @Body() dto: CreateTripRequestDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<TripRequestResponseDto> {
-    return this.requestsService.createRequest(tripId, req.user.sub, dto);
+    return this.requestsService.createRequest(tripId, req.user.id, dto);
   }
 
   @Get('trips/:tripId/requests')
@@ -45,7 +45,7 @@ export class RequestsController {
     @Param('tripId') tripId: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<TripRequestResponseDto[]> {
-    return this.requestsService.getRequestsForTrip(tripId, req.user.sub);
+    return this.requestsService.getRequestsForTrip(tripId, req.user.id);
   }
 
   @Patch('requests/:requestId')
@@ -54,6 +54,6 @@ export class RequestsController {
     @Body() dto: UpdateTripRequestDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<TripRequestResponseDto & { chatId?: string }> {
-    return this.requestsService.updateRequest(requestId, req.user.sub, dto.action);
+    return this.requestsService.updateRequest(requestId, req.user.id, dto.action);
   }
 }

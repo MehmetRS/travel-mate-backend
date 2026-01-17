@@ -5,7 +5,8 @@ import { TripResponseDto, TripDetailResponseDto, CreateTripDto } from '../dtos/t
 
 interface AuthenticatedRequest extends Request {
   user: {
-    sub: string;
+    id: string;
+    email: string;
   };
 }
 
@@ -30,6 +31,6 @@ export class TripsController {
     @Body() createTripDto: CreateTripDto,
     @Req() req: AuthenticatedRequest
   ): Promise<TripResponseDto> {
-    return this.tripsService.create(req.user.sub, createTripDto);
+    return this.tripsService.create(req.user.id, createTripDto);
   }
 }

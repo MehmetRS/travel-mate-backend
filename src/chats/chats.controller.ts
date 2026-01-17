@@ -4,7 +4,8 @@ import { ChatResponseDto, CreateMessageDto } from '../dtos/chat.dto';
 
 interface AuthenticatedRequest extends Request {
   user: {
-    sub: string;
+    id: string;
+    email: string;
   };
 }
 
@@ -17,7 +18,7 @@ export class ChatsController {
     @Param('tripId') tripId: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<ChatResponseDto> {
-    return this.chatsService.getChatByTripId(tripId, req.user.sub);
+    return this.chatsService.getChatByTripId(tripId, req.user.id);
   }
 
   @Post('messages')
@@ -26,6 +27,6 @@ export class ChatsController {
     @Req() req: AuthenticatedRequest,
     @Body() createMessageDto: CreateMessageDto,
   ): Promise<ChatResponseDto> {
-    return this.chatsService.createMessage(tripId, req.user.sub, createMessageDto);
+    return this.chatsService.createMessage(tripId, req.user.id, createMessageDto);
   }
 }

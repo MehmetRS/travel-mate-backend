@@ -15,7 +15,7 @@ import { JwtAuthGuard } from '../auth/jwt.guard';
 
 interface AuthenticatedRequest extends Request {
   user: {
-    sub: string;
+    id: string;
     email: string;
   };
 }
@@ -32,7 +32,7 @@ export class PaymentsController {
     @Body() dto: CreatePaymentDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<PaymentResponseDto> {
-    return this.paymentsService.createPayment(tripId, req.user.sub, dto);
+    return this.paymentsService.createPayment(tripId, req.user.id, dto);
   }
 
   @Get('payments/:paymentId')
@@ -40,6 +40,6 @@ export class PaymentsController {
     @Param('paymentId') paymentId: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<PaymentResponseDto> {
-    return this.paymentsService.getPayment(paymentId, req.user.sub);
+    return this.paymentsService.getPayment(paymentId, req.user.id);
   }
 }

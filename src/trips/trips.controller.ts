@@ -16,10 +16,9 @@ export class TripsController {
 
   @Get()
   async findAll(
-    @Query() query: any,
-    @Req() req: AuthenticatedRequest
+    @Query() query: any
   ): Promise<TripResponseDto[]> {
-    return this.tripsService.findAllWithFilters(query, req.user.id);
+    return this.tripsService.findAllWithFilters(query);
   }
 
   @Get('dashboard')
@@ -35,18 +34,25 @@ export class TripsController {
     return this.tripsService.getDashboardTrips(req.user.id);
   }
 
+  @Get('dashboard/trips')
+  async getDashboardTrips(
+    @Req() req: AuthenticatedRequest
+  ): Promise<TripResponseDto[]> {
+    return this.tripsService.findAll(req.user.id);
+  }
+
   @Public()
   @Get('public')
   async findPublicTrips(@Query() query: any): Promise<TripResponseDto[]> {
     return this.tripsService.findPublicTrips(query);
   }
 
+  @Public()
   @Get(':id')
   async findOne(
-    @Param('id') id: string,
-    @Req() req: AuthenticatedRequest
+    @Param('id') id: string
   ): Promise<TripDetailResponseDto> {
-    return this.tripsService.findOne(id, req.user.id);
+    return this.tripsService.findOne(id);
   }
 
   @Post()

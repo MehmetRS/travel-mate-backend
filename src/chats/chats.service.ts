@@ -15,7 +15,7 @@ export class ChatsService {
     // Verify the trip exists
     const trip = await this.prisma.trip.findUnique({
       where: { id: tripId },
-      select: { id: true },
+      select: { id: true, userId: true },
     });
 
     if (!trip) {
@@ -40,8 +40,13 @@ export class ChatsService {
       return { exists: false };
     }
 
-    // Check if user is a member of the chat
-    if (chat.members.length === 0) {
+    // Check if chat is ACCEPTED
+    if (chat.status !== 'ACCEPTED') {
+      throw new ForbiddenException('Chat is not active');
+    }
+
+    // Check if user is a member of the chat (driver or requester)
+    if (chat.members.length === 0 && trip.userId !== userId) {
       throw new ForbiddenException('You are not a member of this chat');
     }
 

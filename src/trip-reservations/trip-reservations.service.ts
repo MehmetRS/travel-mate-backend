@@ -40,13 +40,12 @@ export class TripReservationsService {
       throw new BadRequestException('Reservation already exists for this trip');
     }
 
-    // Create new reservation
+    // Create new reservation with PENDING status
     return this.prisma.tripReservation.create({
       data: {
         tripId,
         passengerId,
-        passengerAccepted: true,
-        driverAccepted: false,
+        status: 'PENDING',
       },
     });
   }
@@ -68,13 +67,18 @@ export class TripReservationsService {
       throw new ForbiddenException('Only the trip driver can accept reservations');
     }
 
-    // Update reservation to mark as driver accepted
-    return this.prisma.tripReservation.update({
+    // Update reservation status to ACCEPTED
+    const updatedReservation = await this.prisma.tripReservation.update({
       where: { id: reservationId },
       data: {
-        driverAccepted: true,
+        status: 'ACCEPTED',
       },
     });
+
+    // Ensure chat exists and is active
+    await this.ensureChatExists(reservation.tripId, reservation.passengerId, reservation.trip.userId);
+
+    return updatedReservation;
   }
 
   async rejectReservation(reservationId: string, userId: string) {
@@ -114,8 +118,8 @@ export class TripReservationsService {
       throw new NotFoundException('Reservation not found');
     }
 
-    // Validate reservation is mutually accepted
-    if (!reservation.passengerAccepted || !reservation.driverAccepted) {
+    // Validate reservation is accepted
+    if (reservation.status !== 'ACCEPTED') {
       throw new BadRequestException('Only accepted reservations can be cancelled');
     }
 
@@ -172,8 +176,8 @@ export class TripReservationsService {
       throw new BadRequestException('Trip date has not passed yet');
     }
 
-    // Validate reservation is mutually accepted
-    if (!reservation.passengerAccepted || !reservation.driverAccepted) {
+    // Validate reservation is accepted
+    if (reservation.status !== 'ACCEPTED') {
       throw new BadRequestException('Reservation must be mutually accepted to complete');
     }
 
@@ -197,8 +201,7 @@ export class TripReservationsService {
         id: reservation.id,
         tripId: reservation.tripId,
         passengerId: reservation.passengerId,
-        passengerAccepted: reservation.passengerAccepted,
-        driverAccepted: reservation.driverAccepted,
+        status: reservation.status,
       },
       trip: {
         id: updatedTrip.id,
@@ -232,8 +235,8 @@ export class TripReservationsService {
       throw new BadRequestException('Trip date has not passed yet');
     }
 
-    // Validate reservation is mutually accepted
-    if (!reservation.passengerAccepted || !reservation.driverAccepted) {
+    // Validate reservation is accepted
+    if (reservation.status !== 'ACCEPTED') {
       throw new BadRequestException('Reservation must be mutually accepted to complete');
     }
 
@@ -257,8 +260,7 @@ export class TripReservationsService {
         id: reservation.id,
         tripId: reservation.tripId,
         passengerId: reservation.passengerId,
-        passengerAccepted: reservation.passengerAccepted,
-        driverAccepted: reservation.driverAccepted,
+        status: reservation.status,
       },
       trip: {
         id: updatedTrip.id,
@@ -267,5 +269,36 @@ export class TripReservationsService {
         completedByPassenger: updatedTrip.completedByPassenger,
       }
     };
+  }
+
+  private async ensureChatExists(tripId: string, passengerId: string, driverId: string) {
+    // Check if chat already exists
+    const existingChat = await this.prisma.chat.findUnique({
+      where: { tripId },
+    });
+
+    if (!existingChat) {
+      // Create new chat with ACCEPTED status
+      await this.prisma.chat.create({
+        data: {
+          tripId,
+          status: 'ACCEPTED',
+          members: {
+            create: [
+              { userId: driverId },
+              { userId: passengerId },
+            ],
+          },
+        },
+      });
+    } else {
+      // Update existing chat to ACCEPTED status
+      await this.prisma.chat.update({
+        where: { tripId },
+        data: {
+          status: 'ACCEPTED',
+        },
+      });
+    }
   }
 }

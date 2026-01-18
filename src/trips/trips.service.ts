@@ -59,8 +59,7 @@ export class TripsService {
           reservations: {
             some: {
               passengerId: userId,
-              passengerAccepted: true,
-              driverAccepted: true
+              status: 'ACCEPTED'
             }
           }
         }
@@ -179,7 +178,7 @@ export class TripsService {
     }
   }
 
-  async findOne(id: string, userId: string): Promise<TripDetailResponseDto> {
+  async findOne(id: string): Promise<TripDetailResponseDto> {
     const trip = await this.prisma.trip.findUnique({
       where: { id },
       include: {
@@ -188,24 +187,18 @@ export class TripsService {
             vehicles: true
           }
         },
-        reservations: true // Need reservations to check visibility
+        reservations: {
+          select: {
+            id: true,
+            passengerId: true,
+            status: true
+          }
+        }
       } as any
     }) as unknown as TripWithRelations & { reservations: any[] };
 
     if (!trip) {
       throw new NotFoundException('Trip not found');
-    }
-
-    // Check visibility rules
-    const isOwner = trip.userId === userId;
-    const hasAcceptedReservation = trip.reservations.some(
-      reservation => reservation.passengerId === userId &&
-                    reservation.passengerAccepted === true &&
-                    reservation.driverAccepted === true
-    );
-
-    if (!isOwner && !hasAcceptedReservation) {
-      throw new ForbiddenException('You are not authorized to view this trip');
     }
 
     const response: TripDetailResponse = {
@@ -232,7 +225,7 @@ export class TripsService {
     return plainToInstance(TripDetailResponseDto, response, { excludeExtraneousValues: true });
   }
 
-  async findAllWithFilters(query: any, userId: string): Promise<TripResponseDto[]> {
+  async findAllWithFilters(query: any): Promise<TripResponseDto[]> {
     const {
       origin,
       destination,
@@ -246,10 +239,7 @@ export class TripsService {
       role,
     } = query;
 
-    const where: Prisma.TripWhereInput = {
-      // Apply visibility rules first
-      ...this.buildVisibilityWhereClause(userId)
-    };
+    const where: Prisma.TripWhereInput = {};
 
     // ORIGIN
     if (origin) {

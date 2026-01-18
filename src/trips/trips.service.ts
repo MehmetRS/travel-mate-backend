@@ -538,46 +538,85 @@ export class TripsService {
     try {
       const trips = await this.prisma.trip.findMany({
         where,
-        orderBy: {
-          date: 'asc',
-        },
-        include: {
+        orderBy: { date: 'asc' },
+        select: {
+          id: true,
+          from: true,
+          to: true,
+          date: true,
+          price: true,
+          totalSeats: true,
+          availableSeats: true,
+          isFull: true,
+          description: true,
           user: {
-            include: {
-              vehicles: true
+            select: {
+              id: true,
+              name: true,
+              rating: true,
+              isVerified: true,
+              vehicles: {
+                select: {
+                  id: true,
+                  type: true,
+                  brand: true,
+                  model: true,
+                  seatCount: true
+                }
+              }
+            }
+          },
+          vehicle: {
+            select: {
+              id: true,
+              type: true,
+              brand: true,
+              model: true,
+              seatCount: true
             }
           }
-        } as any
-      }) as unknown as TripWithRelations[];
-
-      const responses: TripResponse[] = trips.map(trip => ({
-        id: trip.id,
-        origin: trip.from,
-        destination: trip.to,
-        departureDateTime: trip.date,
-        price: trip.price,
-        totalSeats: trip.totalSeats,
-        availableSeats: trip.availableSeats,
-        isFull: trip.isFull,
-        description: trip.description ?? undefined,
-        driver: {
-          id: trip.user.id,
-          name: trip.user.name || 'Unknown',
-          rating: trip.user.rating,
-          isVerified: trip.user.isVerified,
-          vehicle: trip.user.vehicle ? plainToInstance(VehicleDto, trip.user.vehicle) : null
         }
-      }));
+      });
 
-      // Transform to DTO
-      return responses.map(response =>
-        plainToInstance(TripResponseDto, response, { excludeExtraneousValues: true })
+      // Manually map to TripResponseDto-compatible object
+      return trips.map(trip =>
+        plainToInstance(
+          TripResponseDto,
+          {
+            id: trip.id,
+            origin: trip.from,
+            destination: trip.to,
+            departureDateTime: trip.date,
+            price: trip.price,
+            totalSeats: trip.totalSeats,
+            availableSeats: trip.availableSeats,
+            isFull: trip.isFull,
+            description: trip.description ?? undefined,
+            driver: trip.user ? {
+              id: trip.user.id,
+              name: trip.user.name || 'Unknown',
+              rating: trip.user.rating || 0,
+              isVerified: trip.user.isVerified || false,
+              vehicle: trip.user.vehicles && trip.user.vehicles.length > 0 ? {
+                vehicleType: trip.user.vehicles[0].type,
+                brand: trip.user.vehicles[0].brand,
+                model: trip.user.vehicles[0].model,
+                seats: trip.user.vehicles[0].seatCount
+              } : null
+            } : {
+              id: 'unknown',
+              name: 'Unknown',
+              rating: 0,
+              isVerified: false,
+              vehicle: null
+            }
+          },
+          { excludeExtraneousValues: true }
+        )
       );
-    } catch (error) {
-      console.error('[TripsService] findPublicTrips failed', error);
-      // Return empty array instead of crashing
+    } catch (err) {
+      console.error('[findPublicTrips]', err);
       return [];
     }
   }
 }
-

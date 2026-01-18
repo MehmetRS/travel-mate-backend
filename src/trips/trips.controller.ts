@@ -35,6 +35,12 @@ export class TripsController {
     return this.tripsService.getDashboardTrips(req.user.id);
   }
 
+  @Public()
+  @Get('public')
+  async findPublicTrips(@Query() query: any): Promise<TripResponseDto[]> {
+    return this.tripsService.findPublicTrips(query);
+  }
+
   @Get(':id')
   async findOne(
     @Param('id') id: string,
@@ -49,11 +55,5 @@ export class TripsController {
     @Req() req: AuthenticatedRequest
   ): Promise<TripResponseDto> {
     return this.tripsService.create(req.user.id, createTripDto);
-  }
-
-  @Public()
-  @Get('public')
-  async findPublicTrips(@Query() query: any): Promise<TripResponseDto[]> {
-    return this.tripsService.findPublicTrips(query);
   }
 }

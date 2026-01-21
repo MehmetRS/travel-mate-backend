@@ -457,6 +457,109 @@ export class TripsService {
   }
 
   /**
+   * Get a single public trip by ID
+   * This method does NOT use visibility rules and is accessible to authenticated users
+   * Returns trip only if it's public (not full and not completed)
+   * Includes driver information
+   */
+  async getPublicTripById(tripId: string): Promise<TripDetailResponseDto> {
+    try {
+      const trip = await this.prisma.trip.findUnique({
+        where: {
+          id: tripId,
+          // Public trips must be available (not full and not completed)
+          isFull: false,
+          isCompleted: false
+        },
+        select: {
+          id: true,
+          from: true,
+          to: true,
+          date: true,
+          price: true,
+          totalSeats: true,
+          availableSeats: true,
+          isFull: true,
+          description: true,
+          createdAt: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              rating: true,
+              isVerified: true,
+              vehicles: {
+                select: {
+                  id: true,
+                  type: true,
+                  brand: true,
+                  model: true,
+                  seatCount: true
+                }
+              }
+            }
+          },
+          vehicle: {
+            select: {
+              id: true,
+              type: true,
+              brand: true,
+              model: true,
+              seatCount: true
+            }
+          }
+        }
+      });
+
+      if (!trip) {
+        throw new NotFoundException("Trip not found");
+      }
+
+      // Manually map to TripDetailResponseDto-compatible object
+      return plainToInstance(
+        TripDetailResponseDto,
+        {
+          id: trip.id,
+          origin: trip.from,
+          destination: trip.to,
+          departureDateTime: trip.date,
+          price: trip.price,
+          totalSeats: trip.totalSeats,
+          availableSeats: trip.availableSeats,
+          isFull: trip.isFull,
+          description: trip.description ?? undefined,
+          createdAt: trip.createdAt,
+          driver: trip.user ? {
+            id: trip.user.id,
+            name: trip.user.name || 'Unknown',
+            rating: trip.user.rating || 0,
+            isVerified: trip.user.isVerified || false,
+            vehicle: trip.user.vehicles && trip.user.vehicles.length > 0 ? {
+              vehicleType: trip.user.vehicles[0].type,
+              brand: trip.user.vehicles[0].brand,
+              model: trip.user.vehicles[0].model,
+              seats: trip.user.vehicles[0].seatCount
+            } : null
+          } : {
+            id: 'unknown',
+            name: 'Unknown',
+            rating: 0,
+            isVerified: false,
+            vehicle: null
+          }
+        },
+        { excludeExtraneousValues: true }
+      );
+    } catch (err) {
+      console.error('[getPublicTripById]', err);
+      if (err instanceof NotFoundException) {
+        throw err;
+      }
+      throw new NotFoundException("Trip not found");
+    }
+  }
+
+  /**
    * Find public trips that are available for booking
    * This method does NOT use visibility rules and is accessible to unauthenticated users
    */

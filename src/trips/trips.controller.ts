@@ -48,6 +48,14 @@ export class TripsController {
   }
 
   @Public()
+  @Get(':id/public')
+  async getPublicTripById(
+    @Param('id') id: string
+  ): Promise<TripDetailResponseDto> {
+    return this.tripsService.getPublicTripById(id);
+  }
+
+  @Public()
   @Get(':id')
   async findOne(
     @Param('id') id: string
